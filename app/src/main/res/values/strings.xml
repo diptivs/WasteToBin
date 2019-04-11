@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">WasteToBin</string>
+    <string name="qLabel">Where Does My</string>
+    <string name="appTitle">Waste To Bin</string>
+    <string name="goButtnLabel">Go?</string>
+    <string name="dbButtnLabel">Database</string>
+    <string name="voiceButtnLabel">Voice</string>
+    <string name="title_activity_database">DatabaseActivity</string>
+    <string name="action_settings">Settings</string>
+</resources>
