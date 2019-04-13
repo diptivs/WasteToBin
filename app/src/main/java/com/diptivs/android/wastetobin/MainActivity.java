@@ -1,25 +1,41 @@
 package com.diptivs.android.wastetobin;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions;
+import com.google.firebase.ml.vision.cloud.label.FirebaseVisionCloudLabel;
+import com.google.firebase.ml.vision.cloud.label.FirebaseVisionCloudLabelDetector;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +45,27 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private PopupWindow popupWindow;
+    public static Bitmap bitmapImage; // User image
+    private ImageView imageDisplay; // Displayed Image
+    private FirebaseVisionImage imageFirebase; // Firebase Vision Image
+    private ListView textPrediction; // Predicted names
+    private List<String> totalPredictionList = new ArrayList<>();
+    private String predict;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.what_goes_where);
+        bitmapImage = resizeImage(bitmapImage);
+
+        // Image View
+        imageDisplay = (ImageView) findViewById(R.id.imageView);
+        imageDisplay.setImageBitmap(bitmapImage);
+
+        textPrediction = (ListView) findViewById(R.id.textViewPrediction);
+
         this.initiateDatabase();
         // fills the auto-complete selections
         List<String> autoCompleteList = Database.getInstance().getTotalList();
@@ -47,6 +79,18 @@ public class MainActivity extends AppCompatActivity {
         if (intent.getStringExtra(DatabaseActivity.EXTRA_ITEM) != "") {
             actv.setText(intent.getStringExtra(DatabaseActivity.EXTRA_ITEM));
         }
+    }
+
+    private Bitmap resizeImage(Bitmap image) {
+        float aspectRatio = image.getWidth() /
+                (float) image.getHeight();
+        int width = 480;
+        int height = Math.round(width / aspectRatio);
+
+        image = Bitmap.createScaledBitmap(
+                image, width, height, false);
+
+        return image;
     }
 
     public void initiateFileInDatabase(String filePath, Constants.Categories itemType) {
@@ -189,6 +233,10 @@ public class MainActivity extends AppCompatActivity {
             showResult(query);
         }
         hideSoftKeyBoard();
+        bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.what_goes_where);
+        bitmapImage = resizeImage(bitmapImage);
+        imageDisplay.setImageBitmap(bitmapImage);
+
     }
 
     public void voice(View view) {
@@ -201,22 +249,124 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void camera(View view) {
+        if (checkSelfPermission(Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA},
+                    Constants.MY_CAMERA_REQUEST_CODE);
+        }
+        Intent iCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        try{
+            if (iCamera.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(iCamera, Constants.REQ_CAPTURE_IMAGE);
+            }
+        }catch (Exception exception) {
+            Toast.makeText(this, "Error initializing Camera Capture.", Toast.LENGTH_LONG).show();
+        }
+
+    }
+
 
     /**
      * Passes the recognized speech into the query search.
      */
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // handles voice results
-        if (requestCode == Constants.REQ_VOICE && resultCode == RESULT_OK) {
-            ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            String query = result.get(0);
-            AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
-            actv.setText(query);
+
+        if(resultCode == RESULT_OK)
+        {
+            // handles voice results
+            if (requestCode == Constants.REQ_VOICE) {
+                ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                String query = result.get(0);
+                AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
+                actv.setText(query);
+            }
+
+            if (requestCode == Constants.REQ_CAPTURE_IMAGE){
+                //PHOTO FROM CAMERA
+                bitmapImage = (Bitmap) data.getExtras().get("data");
+                imageDisplay.setImageBitmap(bitmapImage);
+                bitmapImage = resizeImage(bitmapImage);
+                imageFirebase = FirebaseVisionImage.fromBitmap(bitmapImage);
+                textPrediction.setVisibility(View.VISIBLE);
+                textPrediction.setFastScrollEnabled(true);
+                textPrediction.setFilterText("Loading ...");
+                labelImagesCloud(imageFirebase);
+            }
+
         }
 
-        //TODO implement image recognition
-        // if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+    }
 
-        // }
+    private void labelImagesCloud(FirebaseVisionImage image) {
+
+        // [START set_detector_options_cloud]
+        FirebaseVisionCloudDetectorOptions options = new FirebaseVisionCloudDetectorOptions.Builder()
+                .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
+                .setMaxResults(5)
+                .build();
+        // [END set_detector_options_cloud]
+
+        // [START get_detector_cloud]
+        FirebaseVisionCloudLabelDetector detector = FirebaseVision.getInstance()
+                .getVisionCloudLabelDetector(options);
+        // [END get_detector_cloud]
+        // [START run_detector_cloud]
+        Task<List<FirebaseVisionCloudLabel>> result =
+                detector.detectInImage(image)
+                        .addOnSuccessListener(
+                                new OnSuccessListener<List<FirebaseVisionCloudLabel>>() {
+                                    @Override
+                                    public void onSuccess(List<FirebaseVisionCloudLabel> labels) {
+                                        // Task completed successfully
+                                        // [START_EXCLUDE]
+                                        // [START get_labels_cloud]
+
+                                        for (FirebaseVisionCloudLabel label : labels) {
+                                            predict="";
+                                            String text = label.getLabel();
+                                            Log.d(Constants.TAGDipti, text);
+                                            String entityId = label.getEntityId();
+                                            float confidence = label.getConfidence();
+                                            predict = text + " " + String.format("%.3f", confidence) + "\n";
+                                            totalPredictionList.add(predict);
+                                        }
+
+                                        final ListView listView = (ListView) findViewById(R.id.textViewPrediction);
+                                        Log.d(Constants.TAGDipti,totalPredictionList.toString());
+                                        listView.setVisibility(View.VISIBLE);
+                                        listView.setFastScrollEnabled(true);
+                                        IndexerAdapter<String> adapter = new IndexerAdapter<String>(getApplicationContext(),
+                                                android.R.layout.simple_list_item_1, totalPredictionList);
+                                        listView.setAdapter(adapter);
+                                        // listens for a selection
+                                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                                System.out.println(parent.getItemAtPosition(position));
+                                                String temp = (parent.getItemAtPosition(position)).toString();
+                                                String query = temp.substring(0, temp.lastIndexOf(" "));
+
+                                                AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
+                                                actv.setText(query);
+
+                                                listView.setVisibility(View.GONE);
+                                            }
+                                        });
+                                        // [END get_labels_cloud]
+                                        // [END_EXCLUDE]
+                                    }
+                                })
+                        .addOnFailureListener(
+                                new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        predict="";
+                                        predict = "An unsuccessful attempt to connect to the server. Check your Internet connection.";
+                                        totalPredictionList.add(predict);
+                                    }
+                                });
+        // [END run_detector_cloud]
+
+
     }
 }

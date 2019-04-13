@@ -7,4 +7,6 @@
     <string name="voiceButtnLabel">Voice</string>
     <string name="title_activity_database">DatabaseActivity</string>
     <string name="action_settings">Settings</string>
+    <string name="TakePhoto">Take a photo</string>
+    <string name="LoadedImage">Loaded Image</string>
 </resources>

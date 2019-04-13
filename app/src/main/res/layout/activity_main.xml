@@ -19,8 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
         android:layout_weight="1"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp">
+        tools:layout_editor_absoluteX="35dp"
+        tools:layout_editor_absoluteY="390dp">
 
         <TextView
             android:id="@+id/qLabel"
@@ -34,6 +34,17 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textSize="34sp"
             tools:ignore="HardcodedText" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_alignBottom="@id/search"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="120dp"
+            android:contentDescription="@string/LoadedImage"
+            android:visibility="visible"
+            app:srcCompat="@drawable/what_goes_where" />
 
         <TextView
             android:id="@+id/appTitle"
@@ -51,7 +62,9 @@
             android:id="@+id/search"
             android:layout_width="wrap_content"
             android:layout_height="50dp"
-            android:layout_centerInParent="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="200dp"
+           android:layout_marginLeft="20dp"
             android:background="@android:color/white"
             android:dropDownHeight="200dp"
             android:ems="10"
@@ -69,22 +82,28 @@
             android:layout_alignTop="@id/search"
             android:layout_alignBottom="@id/search"
             android:layout_toRightOf="@id/search"
+            android:layout_marginLeft="10dp"
             android:onClick="getQuery"
             android:text="@string/goButtnLabel"
             android:textSize="20sp"
             tools:ignore="HardcodedText,RtlHardcoded" />
 
-        <Button
-            android:id="@+id/voiceButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_toLeftOf="@id/search"
-            android:layout_alignBottom="@id/search"
-            android:adjustViewBounds="true"
-            android:background="@drawable/voice"
-            android:onClick="voice"
-            android:text=""
-            tools:ignore="HardcodedText" />
+        <ListView
+            android:id="@+id/textViewPrediction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:visibility="gone"
+            android:layout_alignTop="@id/search"
+            android:layout_marginTop="50dp"
+            android:layout_marginBottom="50dp"
+             >
+
+        </ListView>
+
+
+
     </RelativeLayout>
 
     <RelativeLayout
@@ -104,6 +123,30 @@
             android:onClick="displayDatabase"
             android:text="@string/dbButtnLabel"
             tools:ignore="HardcodedText" />
+
+        <ImageButton
+            android:id="@+id/voiceButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@id/imageButtonCamera"
+            android:adjustViewBounds="false"
+            android:onClick="voice"
+            app:srcCompat="@drawable/voice" />
+
+        <ImageButton
+            android:id="@+id/imageButtonCamera"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:background="@color/buttonColor"
+            android:alpha="0.6"
+            android:contentDescription="@string/TakePhoto"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:onClick="camera"
+            app:srcCompat="@drawable/camera_foreground" />
 
 
     </RelativeLayout>

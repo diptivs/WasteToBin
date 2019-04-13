@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "646791120414",
+    "firebase_url": "https://wastetobin-43a6e.firebaseio.com",
+    "project_id": "wastetobin-43a6e",
+    "storage_bucket": "wastetobin-43a6e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:646791120414:android:81cece356316ab12",
+        "android_client_info": {
+          "package_name": "com.diptivs.android.wastetobin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "646791120414-s09f6g6jher6ecbl1vhvlrt9vil5hhl4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoolcTh0d-JGrDyQV7kITBmi_xvc2lDpk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "646791120414-s09f6g6jher6ecbl1vhvlrt9vil5hhl4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

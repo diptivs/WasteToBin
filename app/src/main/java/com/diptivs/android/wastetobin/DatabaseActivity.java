@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,7 +30,7 @@ public class DatabaseActivity extends Activity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_database);
-    List<String> autoCompleteList = Database.getInstance().getTotalList();
+
     ListView listView = (ListView) findViewById(R.id.listView);
     listView.setFastScrollEnabled(true);
     IndexerAdapter<String> adapter = new IndexerAdapter<String>(getApplicationContext(),
@@ -85,6 +86,7 @@ class IndexerAdapter<T> extends ArrayAdapter<T> implements SectionIndexer {
     int size = elements.size();
     for (int i = size - 1; i >= 0; i--) {
       String element = elements.get(i);
+      Log.d(Constants.TAGDipti,element);
       alphaIndexer.put(element.substring(0, 1), i);
     }
     Set<String> keys = alphaIndexer.keySet();

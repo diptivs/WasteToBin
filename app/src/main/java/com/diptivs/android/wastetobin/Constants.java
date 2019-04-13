@@ -42,6 +42,7 @@ public class Constants {
   /** State for voice recognition. */
   public static final int REQ_VOICE = 1;
   /** State for image capture.*/
-  public static final int REQUEST_IMAGE_CAPTURE = 2;
+  public static final int REQ_IMAGE_GALLERY = 2;
+  public static final int MY_CAMERA_REQUEST_CODE = 100;
 
 }
