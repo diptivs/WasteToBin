@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -36,7 +35,7 @@ public class DatabaseActivity extends Activity {
     IndexerAdapter<String> adapter = new IndexerAdapter<String>(getApplicationContext(),
         android.R.layout.simple_list_item_1, Database.getInstance().getTotalList());
     listView.setAdapter(adapter);
-    // listens for a selection
+
     listView.setOnItemClickListener(new OnItemClickListener() {
       public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         System.out.println(parent.getItemAtPosition(position));
@@ -47,7 +46,6 @@ public class DatabaseActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.databaseactivity, menu);
         return true;
     }
@@ -86,7 +84,6 @@ class IndexerAdapter<T> extends ArrayAdapter<T> implements SectionIndexer {
     int size = elements.size();
     for (int i = size - 1; i >= 0; i--) {
       String element = elements.get(i);
-      Log.d(Constants.TAGDipti,element);
       alphaIndexer.put(element.substring(0, 1), i);
     }
     Set<String> keys = alphaIndexer.keySet();

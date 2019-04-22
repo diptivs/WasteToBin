@@ -31,6 +31,11 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions;
 import com.google.firebase.ml.vision.cloud.label.FirebaseVisionCloudLabel;
@@ -51,11 +56,23 @@ public class MainActivity extends AppCompatActivity {
     private ListView textPrediction; // Predicted names
     private List<String> totalPredictionList = new ArrayList<>();
     private String predict;
+    private static FirebaseDatabase fDB;
+    private static DatabaseReference fireBaseDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(fDB ==null && savedInstanceState == null)
+        {
+            fDB = FirebaseDatabase.getInstance();
+            fDB.setPersistenceEnabled(true);
+            fireBaseDB = fDB.getReference();
+
+        }
+
+        this.initiateFireBaseDbListener();
 
         bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.what_goes_where);
         bitmapImage = resizeImage(bitmapImage);
@@ -66,15 +83,7 @@ public class MainActivity extends AppCompatActivity {
 
         textPrediction = (ListView) findViewById(R.id.textViewPrediction);
 
-        this.initiateDatabase();
-        // fills the auto-complete selections
-        List<String> autoCompleteList = Database.getInstance().getTotalList();
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, autoCompleteList);
-
         AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
-        actv.setAdapter(adapter);
-        // receives query if coming from database activity
         Intent intent = getIntent();
         if (intent.getStringExtra(DatabaseActivity.EXTRA_ITEM) != "") {
             actv.setText(intent.getStringExtra(DatabaseActivity.EXTRA_ITEM));
@@ -106,12 +115,104 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void initiateFireBaseDbListener()
+    {
+        for (int i = 0; i < Constants.supportedCategoriesLanguages.length; i++) {
+            fireBaseDB.child(Constants.supportedCategoriesLanguages[i])
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                Log.d(Constants.TAGDipti,"Enter  onDataChange");
+
+                            for (DataSnapshot binSnapshot : dataSnapshot.getChildren()) {
+                                Log.d(Constants.TAGDipti, "For Bin: "+binSnapshot.getKey());
+                                List<String> binItems;
+                                switch(binSnapshot.getKey())
+                                {
+                                    case "BLUE_BIN":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.BLUE_BIN);
+                                    break;
+                                    case "BTTSWD":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.BRING_TO_TRANSFER_STATION_OR_WASTE_DEPOT);
+                                        break;
+                                    case "EWaste":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                       // Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.E_WASTE);
+                                        break;
+                                    case "Green":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.GREEN_BIN);
+                                        break;
+                                    case "Grey":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.GREY_BIN);
+                                        break;
+                                    case "HHW":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.HOUSEHOLD_HAZARDOUS_WASTE);
+                                        break;
+                                    case "OW":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.OVERSIZED_WASTE);
+                                        break;
+                                    case "PW":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.PROHIBITED_WASTE);
+                                        break;
+                                    case "SM":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.SCRAP_METAL);
+                                        break;
+                                    case "YW":
+                                        binItems  = (List<String>)binSnapshot.getValue();
+                                        //Log.d(Constants.TAGDipti,String.valueOf(binItems.size()) + binItems);
+                                        Database.getInstance().retrieveInformationFromFireBaseObj(binItems, Constants.Categories.YARD_WASTE);
+                                        break;
+                                    }
+
+                            }
+                            fillInAutoCompleteAdapter();
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //Read from local DB if fails to read from firebase
+                            Log.d(Constants.TAGDipti,"Calling initiateDatabase");
+                            initiateDatabase();
+                            fillInAutoCompleteAdapter();
+                        }
+
+                    });
+
+        }
+
+    }
+
+    private void fillInAutoCompleteAdapter()
+    {
+
+        // fills the auto-complete selections
+        List<String> autoCompleteList = Database.getInstance().getTotalList();
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, autoCompleteList);
+
+        AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
+        actv.setAdapter(adapter);
+    }
+
     public void initiateDatabase() {
         String pathInAssetsFolder = null;
         for (int i = 0; i < Constants.supportedCategoriesLanguages.length; i++) {
-            // For every supported language we should have a translation of each object which goes into
-            // the specified categories in Constants.Categories. Also since we're storing all of this information
-            // locally, we'll be storing collecting this from informatino from the android assets folder.
             pathInAssetsFolder = String.format("categories/%s/Blue.txt", Constants.supportedCategoriesLanguages[i]);
             this.initiateFileInDatabase(pathInAssetsFolder, Constants.Categories.BLUE_BIN);
 
@@ -132,6 +233,9 @@ public class MainActivity extends AppCompatActivity {
 
             pathInAssetsFolder = String.format("categories/%s/OW.txt", Constants.supportedCategoriesLanguages[i]);
             this.initiateFileInDatabase(pathInAssetsFolder, Constants.Categories.OVERSIZED_WASTE);
+
+            pathInAssetsFolder = String.format("categories/%s/PW.txt", Constants.supportedCategoriesLanguages[i]);
+            this.initiateFileInDatabase(pathInAssetsFolder, Constants.Categories.PROHIBITED_WASTE);
 
             pathInAssetsFolder = String.format("categories/%s/SM.txt", Constants.supportedCategoriesLanguages[i]);
             this.initiateFileInDatabase(pathInAssetsFolder, Constants.Categories.SCRAP_METAL);
@@ -277,7 +381,7 @@ public class MainActivity extends AppCompatActivity {
             // handles voice results
             if (requestCode == Constants.REQ_VOICE) {
                 ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                String query = result.get(0);
+                String query = result.get(0).toLowerCase();
                 AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.search);
                 actv.setText(query);
             }
@@ -299,6 +403,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void labelImagesCloud(FirebaseVisionImage image) {
+
 
         // [START set_detector_options_cloud]
         FirebaseVisionCloudDetectorOptions options = new FirebaseVisionCloudDetectorOptions.Builder()
@@ -350,6 +455,8 @@ public class MainActivity extends AppCompatActivity {
                                                 actv.setText(query);
 
                                                 listView.setVisibility(View.GONE);
+                                                totalPredictionList.clear();
+
                                             }
                                         });
                                         // [END get_labels_cloud]
